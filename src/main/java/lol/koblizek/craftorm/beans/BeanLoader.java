@@ -51,6 +51,7 @@ public class BeanLoader {
         return null;
     }
 
+    @Deprecated
     public void performFieldInjection(String packageName) {
         for (Class<?> type : ClassUtils.getClassesInPackage(this.getClass().getClassLoader(), packageName)) {
             Arrays.stream(type.getDeclaredFields()).filter(f -> f.isAnnotationPresent(Inject.class)).forEach(f -> {
@@ -62,7 +63,14 @@ public class BeanLoader {
                         if (o != null) {
                             f.set(null, o);
                         } else {
-                            throw new IllegalStateException("Bean injection failed for field " + f.getName() + " in class " + type.getName() + " of type " + f.getType().getName() + " because the bean was not found.");
+                            throw new IllegalStateException("Value injection failed for field " + f.getName() + " in class " + type.getName() + " of type " + f.getType().getName() + " because the value was not found in any of configurations.");
+                        }
+                    } else {
+                        Object o = getBean(f.getDeclaringClass());
+                        if (o != null) {
+                            f.set(o, getBean(f.getType()));
+                        } else {
+                            throw new IllegalStateException("Value injection failed for field " + f.getName() + " in class " + type.getName() + ", because no such bean exists for non-static field. \nConsider declaring field static or converting your class to bean");
                         }
                     }
                 } catch (IllegalAccessException e) {

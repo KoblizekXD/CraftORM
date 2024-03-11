@@ -9,6 +9,8 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Executable;
+import java.lang.reflect.Method;
+import java.util.Arrays;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -70,6 +72,22 @@ public class ClassUtils {
             return true;
         } catch (Exception e) {
             return false;
+        }
+    }
+
+    public static <T> T newInstance(Class<T> type, Object... params) {
+        try {
+            return type.getConstructor(Arrays.stream(params).map(Object::getClass).toArray(Class[]::new)).newInstance(params);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public static Object invoke(Method method, Object instance, Object... params) {
+        try {
+            return method.invoke(instance, params);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
         }
     }
 }
