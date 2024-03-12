@@ -15,6 +15,7 @@ public final class ValidatedProperties extends Properties {
     public ValidatedProperties(Map<String, Type> validationKeys, InputStream values, boolean strict) {
         try {
             load(values);
+            values.close();
             for (Map.Entry<Object, Object> entry : entrySet()) {
                 if (strict) {
                     if (!validationKeys.containsKey(entry.getKey())) {
@@ -44,13 +45,15 @@ public final class ValidatedProperties extends Properties {
         Properties properties = new Properties();
         try {
             properties.load(stream);
-            return properties.entrySet().stream().map(e -> {
+            var entries = properties.entrySet().stream().map(e -> {
                 Type type = Type.find(e.getValue().toString());
                 if (type == null) {
                     throw new IllegalArgumentException("Invalid type: " + e.getValue());
                 }
                 return Map.entry(e.getKey().toString(), type);
-            }).collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+            });
+            stream.close();
+            return entries.collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
         } catch (IOException e) {
             throw new RuntimeException(e);
         }

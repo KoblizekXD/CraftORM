@@ -23,8 +23,15 @@ public @interface ValueOf {
 
         @Override
         public Object onApplied(BeanLoader beanLoader, ValueOf annotation, ElementType element, Member member) {
-            Properties properties = beanLoader.getBean(ResourceProvider.class).getPropertyFile(annotation.resource());
-            String property = properties.getProperty(annotation.value());
+            ResourceProvider provider = beanLoader.getBean(ResourceProvider.class);
+            String property;
+            if (annotation.resource().equals("database.properties")) {
+                property = provider.getValidatedProperties(annotation.resource(), true)
+                        .getProperty(annotation.value());
+            } else {
+                property = provider.getPropertyFile(annotation.resource())
+                        .getProperty(annotation.value());
+            }
             if (property == null)
                 throw new IllegalArgumentException("Property " + annotation.value() + " not found in " + annotation.resource() + " file.");
             return property;
