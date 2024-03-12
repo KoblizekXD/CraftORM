@@ -8,29 +8,49 @@ import java.util.Arrays;
 import java.util.Map;
 import java.util.Properties;
 import java.util.function.Predicate;
+import java.util.stream.Collectors;
 
 public final class ValidatedProperties extends Properties {
 
-    private final Properties validKeys;
-
-    public ValidatedProperties(InputStream keys, InputStream values) {
+    public ValidatedProperties(Map<String, Type> validationKeys, InputStream values, boolean strict) {
         try {
             load(values);
-            validKeys = new Properties();
-            validKeys.load(keys);
-            // Perform check for valid types
-            for (Object value : validKeys.values()) {
-                if (Arrays.stream(Type.values()).noneMatch(t -> t.toString().equals(value))) {
-                    throw new IllegalStateException("Invalid type: " + value);
-                }
-            }
             for (Map.Entry<Object, Object> entry : entrySet()) {
-                String key = (String) entry.getKey();
-                String value = (String) entry.getValue();
-                if (!Type.find(validKeys.getProperty(key)).getTest().test(value)) {
-                    throw new IllegalStateException("Invalid value type for key " + key + ": " + value);
+                if (strict) {
+                    if (!validationKeys.containsKey(entry.getKey())) {
+                        throw new IllegalArgumentException("Invalid key: " + entry.getKey());
+                    } else {
+                        Type type = validationKeys.get(entry.getKey());
+                        if (!type.getTest().test((String) entry.getValue())) {
+                            throw new IllegalArgumentException("Invalid value for key: " + entry.getKey() + ", required type: " + type);
+                        }
+                    }
                 }
             }
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public Class<?> getClass(String key) {
+        try {
+            return Class.forName(getProperty(key));
+        } catch (ClassNotFoundException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public static Map<String, Type> inputStreamToValidationKeys(InputStream stream) {
+        Properties properties = new Properties();
+        try {
+            properties.load(stream);
+            return properties.entrySet().stream().map(e -> {
+                Type type = Type.find(e.getValue().toString());
+                if (type == null) {
+                    throw new IllegalArgumentException("Invalid type: " + e.getValue());
+                }
+                return Map.entry(e.getKey().toString(), type);
+            }).collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
