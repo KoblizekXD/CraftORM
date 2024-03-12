@@ -30,15 +30,22 @@ public class BeanLoader {
 
     public void load(Class<?>... types) {
         for (Class<?> type : types) {
-            for (Method method : type.getDeclaredMethods()) {
-                if (method.isAnnotationPresent(Bean.class) && Modifier.isStatic(method.getModifiers()))
-                    methodLoad(method);
-            }
             for (Constructor<?> constructor : type.getDeclaredConstructors()) {
                 if (constructor.isAnnotationPresent(Bean.class)
-                    || (constructor.getParameterCount() == 0 && type.isAnnotationPresent(Bean.class)))
+                        || (constructor.getParameterCount() == 0 && type.isAnnotationPresent(Bean.class)))
                     ctorLoad(constructor);
             }
+            for (Method method : type.getDeclaredMethods()) {
+                if (method.isAnnotationPresent(Bean.class)) {
+                    methodLoad(method);
+                }
+            }
+        }
+    }
+
+    public void loadPackage(String packageName) {
+        for (Class<?> type : ClassUtils.getClassesInPackage(this.getClass().getClassLoader(), packageName)) {
+            load(type);
         }
     }
 
@@ -114,7 +121,11 @@ public class BeanLoader {
         }
         try {
             if (method.trySetAccessible()) {
-                beans.put(method.getReturnType(), method.invoke(null, params));
+                if (Modifier.isStatic(method.getModifiers())) {
+                    beans.put(method.getReturnType(), method.invoke(null, params));
+                } else {
+                    beans.put(method.getReturnType(), method.invoke(getBean(method.getDeclaringClass()), params));
+                }
             }
         } catch (IllegalAccessException | InvocationTargetException e) {
             throw new RuntimeException(e);

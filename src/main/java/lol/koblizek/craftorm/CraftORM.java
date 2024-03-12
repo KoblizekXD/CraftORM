@@ -17,11 +17,6 @@ public final class CraftORM {
 
     private static CraftORM craftORM;
 
-    @Bean
-    static CraftORM getInstance() {
-        return craftORM;
-    }
-
     private final HikariConfig config;
     private final HikariDataSource dataSource;
     private final BeanLoader beanLoader;
@@ -30,6 +25,7 @@ public final class CraftORM {
         beanLoader = new BeanLoader(true);
         this.config = new HikariConfig();
         beanLoader.loadVirtual(() -> this);
+        beanLoader.loadPackage(executionType.getPackageName());
         if (url == null) {
             config.setJdbcUrl(beanLoader.getBean(ResourceProvider.class)
                     .getPropertyFile("database.properties")
