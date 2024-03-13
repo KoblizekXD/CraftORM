@@ -9,7 +9,7 @@ import java.lang.annotation.*;
  * The processor must implement the {@link BeanDiscoverable} interface.
  * If this annotation is not present on the injecting annotation, the default processor will be used.
  * @see BeanDiscoverable
- * @see InjectionScanner
+ * @see InjectionEncounterHandler
  */
 @Target(ElementType.ANNOTATION_TYPE)
 @Retention(RetentionPolicy.RUNTIME)

@@ -4,7 +4,8 @@ import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
 import lol.koblizek.craftorm.beans.BeanLoader;
 import lol.koblizek.craftorm.beans.Inject;
-import lol.koblizek.craftorm.beans.InjectionScanner;
+import lol.koblizek.craftorm.beans.InjectionEncounterHandler;
+import lol.koblizek.craftorm.util.ClassScanner;
 import lol.koblizek.craftorm.util.properties.ValueOf;
 
 public final class CraftORM {
@@ -16,6 +17,8 @@ public final class CraftORM {
     private final BeanLoader beanLoader;
 
     private CraftORM(Class<?> executionType, String url) {
+        ClassScanner scanner  = new ClassScanner();
+
         beanLoader = new BeanLoader(true);
         this.config = new HikariConfig();
         beanLoader.loadVirtual(() -> this);
@@ -29,8 +32,9 @@ public final class CraftORM {
         config.addDataSourceProperty("prepStmtCacheSize", "250");
         config.addDataSourceProperty("prepStmtCacheSqlLimit", "2048");
         this.dataSource = new HikariDataSource(config);
-        InjectionScanner scanner = new InjectionScanner(beanLoader, ValueOf.class, Inject.class);
-        scanner.injectFields(executionType.getPackageName());
+        scanner.scanPackage(executionType.getClassLoader(),
+                executionType.getPackageName(),
+                new InjectionEncounterHandler(beanLoader, ValueOf.class, Inject.class));
     }
 
     public static void start(Class<?> main, String dataSourceUrl) {
