@@ -2,16 +2,10 @@ package lol.koblizek.craftorm;
 
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
-import lol.koblizek.craftorm.beans.Bean;
 import lol.koblizek.craftorm.beans.BeanLoader;
 import lol.koblizek.craftorm.beans.Inject;
 import lol.koblizek.craftorm.beans.InjectionScanner;
-import lol.koblizek.craftorm.test.TestMain;
 import lol.koblizek.craftorm.util.properties.ValueOf;
-import org.slf4j.LoggerFactory;
-
-import javax.sql.DataSource;
-import java.sql.SQLException;
 
 public final class CraftORM {
 
@@ -31,12 +25,10 @@ public final class CraftORM {
                     .getPropertyFile("database.properties")
                     .getProperty("database.url"));
         } else config.setJdbcUrl(url);
-        config.addDataSourceProperty("cachePrepStmts", "true" );
-        config.addDataSourceProperty("prepStmtCacheSize", "250" );
-        config.addDataSourceProperty("prepStmtCacheSqlLimit", "2048" );
+        config.addDataSourceProperty("cachePrepStmts", "true");
+        config.addDataSourceProperty("prepStmtCacheSize", "250");
+        config.addDataSourceProperty("prepStmtCacheSqlLimit", "2048");
         this.dataSource = new HikariDataSource(config);
-        // only if above true
-        // beanLoader.performFieldInjection(executionType.getPackageName());
         InjectionScanner scanner = new InjectionScanner(beanLoader, ValueOf.class, Inject.class);
         scanner.injectFields(executionType.getPackageName());
     }
